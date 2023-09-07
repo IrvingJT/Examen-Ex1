@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-read-file',
@@ -14,7 +15,9 @@ export class ReadFileComponent implements OnInit {
   inst1:string = '';
   inst2:string = '';
   msg:string ='';
+  stringLengths: string[] = [];
   generateFile:boolean = false;
+  downloadableFile = false;
 
   constructor(private sanitizer: DomSanitizer) { }
 
@@ -27,20 +30,45 @@ export class ReadFileComponent implements OnInit {
 
     let fileReader = new FileReader();
 
+    let m1=0;
+    let m2=0;
+    let n=0;
+
     fileReader.onload = (e) => {
       this.params = fileReader.result!.toString().split(/[\r\n]+/g);
     }
     fileReader.readAsText(this.file);
 
     fileReader.onloadend = (i) => {
+        this.stringLengths = this.params[0].split(' ');
 
         this.inst1 = this.params[1];
         this.inst2 = this.params[2];
         this.msg = this.params[3];
-        this.reviewingMessage();
 
+        m1 = parseInt(this.stringLengths[0]);
+        m2 = parseInt(this.stringLengths[1]);
+        n = parseInt(this.stringLengths[2]);
+
+        console.log(n)
+        if( (n>=3 && n<=5000) && (m1>=2 && m1<=50) && (m2>=2 && m2<=50) )
+        {
+          this.reviewingMessage();
+
+          this.downloadableFile = true;
+        }
+        else
+        {
+          Swal.fire({
+            title: '¡Error!',
+            text: 'El numero de caracteres de mensaje debe estar entre 3 y 5000, el numero de instrucciones debe estar entre 2 y 50 ',
+            icon: 'error',
+            confirmButtonText: 'Cool'
+          })
+          return;
+        }
+        e.target.value = "";
     }
-    
   }
 
   reviewingMessage = () =>{
@@ -70,6 +98,14 @@ export class ReadFileComponent implements OnInit {
     const blob = new Blob([outputInfo], { type: 'application/octet-stream' });
 
     this.fileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(window.URL.createObjectURL(blob));
+  }
+
+  checkIfDownloadableFileExists = () =>{
+    if(!this.downloadableFile)
+    {
+      return;
+    }
+    this.downloadableFile = false;
   }
 
 }
